@@ -45,8 +45,11 @@ swift docker test --swift 4.0
 # Using a specific image
 swift docker test --image ibmcom/swift-ubuntu:4.1
 
-# Run tests and save dockerfile
+# Run the tests and save dockerfile
 swift docker test --image ibmcom/swift-ubuntu:4.1 --write-dockerfile  
+
+# Set some custom environment variables
+swift docker test --environment API_TOKEN=XXXX
 ```
 
 Save the default dockerfile to ./Dockerfile

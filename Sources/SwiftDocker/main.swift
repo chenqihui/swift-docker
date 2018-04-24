@@ -18,15 +18,22 @@ Group() {
                                flag: "w",
                                description: "Write the dockerfile to the current directory")
 
+    let environment = Option("environment",
+                             default: "",
+                             flag: "e",
+                             description: "A comma seperated list of environment variables")
+
     /// swift docker test -s 4.1
     /// swift docker test -s 4.0
     /// swift docker test -s 4.0 -w
     /// swift docker test --swift 4.0 --write-dockerfile
     /// swift docker test --image swiftdocker/swift:latest
+    /// swift docker test -environment 'FOO=BAR,BAZ=BOP'
+    /// swift docker test -e 'FOO=BAR'
     $0.command("test",
-               version, image, writeDockerfile,
-               description: "Build and test the SPM package") { version, image, shouldWriteToLocalDir in
-        try runDockerTests(version: version, image: image, writeDockerFile: shouldWriteToLocalDir)
+               version, image, writeDockerfile, environment,
+               description: "Build and test the SPM package") { version, image, shouldWriteToLocalDir, flags in
+        try runDockerTests(version: version, image: image, writeDockerFile: shouldWriteToLocalDir, flags: flags)
     }
     /// swift docker test cleanup
     $0.command("cleanup", description: "Remove docker images created with swift docker") {

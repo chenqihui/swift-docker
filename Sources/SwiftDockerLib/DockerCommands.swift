@@ -8,7 +8,7 @@ func cleanup(path: String, fileManager: FileManager, silent: Bool = false) {
     try? fileManager.removeItem(atPath: path)
 }
 
-func runDockerTests(image: DockerImage, writeDockerFile shouldSaveFile: Bool) throws {
+func runDockerTests(image: DockerImage, writeDockerFile shouldSaveFile: Bool, rawflags: String?) throws {
     let fileManager = FileManager.default
     let tempDockerFilePath = NSTemporaryDirectory().appending(tempDockerFilePathComponent)
 
@@ -25,7 +25,9 @@ func runDockerTests(image: DockerImage, writeDockerFile shouldSaveFile: Bool) th
         let dockerTag = makeDockerTag(forDirectoryName: directoryName, version: image.imageName)
 
         try runDockerBuild(tag: dockerTag, dockerFilePath: tempDockerFilePath)
-        try runDockerSwiftTest(tag: dockerTag, remove: true)
+
+        let environment = bashENVFrom(rawflags)
+        try runDockerSwiftTest(tag: dockerTag, remove: true, additionalArgs: environment?.args, env: environment?.prefix)
 
         cleanup(path: tempDockerFilePath, fileManager: fileManager)
 
@@ -38,9 +40,23 @@ func runDockerTests(image: DockerImage, writeDockerFile shouldSaveFile: Bool) th
     }
 }
 
-public func runDockerTests(version: String, image: String, writeDockerFile shouldSaveFile: Bool) throws {
+public func runDockerTests(version: String, image: String, writeDockerFile shouldSaveFile: Bool, flags: String?) throws {
     guard let image = DockerImage(version: version, image: image) else { fatalError() }
-    try runDockerTests(image: image, writeDockerFile: shouldSaveFile)
+    try runDockerTests(image: image, writeDockerFile: shouldSaveFile, rawflags: flags)
+}
+
+// ENV
+
+func bashENVFrom(_ rawString: String?) -> (prefix: String, args: String)? {
+    guard let rawString = rawString else { return nil }
+    let components = rawString.components(separatedBy: ",")
+    let args = components.flatMap {
+        guard let varName = $0.split(separator: "=").first else { return nil }
+        return "-e \(varName)"
+    }.joined(separator: " ")
+
+    let prefix = components.joined(separator: " ")
+    return (prefix, args)
 }
 
 // MARK: Shellout wrappers
@@ -56,9 +72,11 @@ public func writeDefaultDockerFile(version: String) throws {
     try file.write(toFile: defaultDockerFilePath, atomically: true, encoding: .utf8)
 }
 
-func runDockerSwiftTest(tag: String, remove: Bool) throws {
-    let testCMD = ShellOutCommand.dockerRun(tag: tag, remove: remove, command: "swift test")
-    try runAndLog(testCMD, prefix: "Running swift test")
+func runDockerSwiftTest(tag: String, remove: Bool, additionalArgs: String?, env: String?) throws {
+    let testCMD = ShellOutCommand.dockerRun(tag: tag, remove: remove, command: "swift test", additionalArgs: additionalArgs)
+    let wrappedCMD = ShellOutCommand.commandWithEnv(env, command: testCMD)
+    let cmdWithoutEnv = wrappedCMD.string.components(separatedBy: "docker run").dropFirst().joined()
+    try runAndLog(wrappedCMD, prefix: "Running swift test", overideOutput: "docker run \(cmdWithoutEnv)")
 }
 
 func runDockerBuild(tag: String, dockerFilePath: String) throws {

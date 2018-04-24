@@ -2,8 +2,9 @@ import Foundation
 import Rainbow
 import ShellOut
 
-func runAndLog(_ cmd: ShellOutCommand, prefix: String) throws {
-    printTitle("\(prefix): \(cmd.string)")
+func runAndLog(_ cmd: ShellOutCommand, prefix: String, overideOutput: String? = nil) throws {
+    let cmdString = overideOutput ?? cmd.string
+    printTitle("\(prefix): \(cmdString)")
     try shellOut(to: cmd, outputHandle: bodyHandle, errorHandle: errorHandle)
 }
 
@@ -20,6 +21,7 @@ func printError(_ string: String) {
 }
 
 // MARK: Handles
+
 class ColorfulHandle: Handle {
     let print: (String) -> Void
 

@@ -11,14 +11,20 @@ extension ShellOutCommand {
         return ShellOutCommand(string: dockerBuild)
     }
 
-    static func dockerRun(tag: String, remove: Bool, command: String) -> ShellOutCommand {
+    static func dockerRun(tag: String, remove: Bool, command: String, additionalArgs: String? = nil) -> ShellOutCommand {
         let removeTag = remove ? "--rm" : ""
-        let dockerRun = "docker run \(removeTag) \(tag) \(command)"
+        let args: String = additionalArgs ?? ""
+        let dockerRun = "docker run \(removeTag) \(args) \(tag) \(command)"
         return ShellOutCommand(string: dockerRun)
     }
 
     static func dockerRemoveImages(matchingPattern pattern: String) -> ShellOutCommand {
         let removeImages = "docker images -a | grep \"\(pattern)\" | awk '{print $3}' | xargs docker rmi"
         return ShellOutCommand(string: removeImages)
+    }
+
+    static func commandWithEnv(_ env: String?, command: ShellOutCommand) -> ShellOutCommand {
+        let prefix = env ?? ""
+        return ShellOutCommand(string: "\(prefix) \(command.string)")
     }
 }

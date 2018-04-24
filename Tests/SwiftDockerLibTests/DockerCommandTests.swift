@@ -36,10 +36,23 @@ class DockerImageTests: XCTestCase {
         XCTAssertEqual(fullImage, "swift:4.1")
     }
 
+    func testEnvironmentVariables() throws {
+        let input = "PASSWORD=FOO,USERNAME=BAR"
+        let expectedPrefix = "PASSWORD=FOO USERNAME=BAR"
+        let expectedArgs = "-e PASSWORD -e USERNAME"
+        guard let output = bashENVFrom(input) else {
+            XCTFail()
+            return
+        }
+        XCTAssertEqual(output.prefix, expectedPrefix)
+        XCTAssertEqual(output.args, expectedArgs)
+    }
+
     static var allTests = [
         ("testInitailizedWithVersion", DockerImageTests.testInitailizedWithVersion),
         ("testInitailizedWithImage", DockerImageTests.testInitailizedWithImage),
         ("testInitailizedWithEmptyImage", DockerImageTests.testInitailizedWithEmptyImage),
         ("testInitailizationPrecedence", DockerImageTests.testInitailizationPrecedence),
+        ("testEnvironmentVariables", testEnvironmentVariables),
     ]
 }
