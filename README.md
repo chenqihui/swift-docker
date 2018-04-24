@@ -18,7 +18,7 @@ or from source
 > cd swift-docker
 > swift build -c release -Xswiftc -static-stdlib
 # copy the binary to somewhere in your path. 
-> cp ./.build/x86_64-apple-macosx10.10/release/swift-docker ~/bin
+> cp ./.build/release/swift-docker ~/bin
 </pre>
 </details>
 </br>
